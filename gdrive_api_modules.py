@@ -7,10 +7,9 @@ import io
 import os
 
 
-API_CREDENTIAL = os.path.join('')
+API_CREDENTIAL = os.path.join('credentials.json')
 
-# Verifica um token de usuário autenticado, se o token não for mais válido, solicita login novamente para que seja
-# gerado um novo token
+
 def verificar_token(token_path):
 
     try:
@@ -48,7 +47,8 @@ def write_file(drive_service, file_id, new_content):
         media_body=media_body
     ).execute()
 
-# Encontrar o arquivo usando o nome para pesquisar no Google Drive
+
+# Pesquisa um arquivo no GoogleDrive pelo nome
 def search_file_by_name(service, file_name):
     # Procurar o arquivo com o nome específico
     query = f"name = '{file_name}'"
