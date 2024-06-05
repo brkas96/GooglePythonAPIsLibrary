@@ -48,6 +48,35 @@ def write_file(drive_service, file_id, new_content):
         media_body=media_body
     ).execute()
 
+
+# Escreve em algum arquivo do Google Drive sem baixa-lo localmente, ou seja, diretamente no GD
+'''def write_file(drive_service, file_id, ipv4, ipv6):
+
+    # Baixa o conteúdo atual do arquivo
+    request = drive_service.files().get_media(fileId=file_id)
+    io_buffer = io.BytesIO()
+    downloader = MediaIoBaseDownload(io_buffer, request)
+    done = False
+    while done is False:
+        status, done = downloader.next_chunk()
+
+    # Converte o conteúdo em linhas
+    current_lines = io_buffer.getvalue().decode('utf-8').split('\n')
+
+    # Modifica a quarta linha (índice 3) com o novo conteúdo
+    current_lines[3] = ipv4
+    current_lines[4] = ipv6
+
+    # Reconstroi o conteúdo em uma única string
+    updated_content = '\n'.join(current_lines)
+
+    # Carrega o novo conteúdo para o arquivo
+    media_body = MediaIoBaseUpload(io.BytesIO(updated_content.encode('utf-8')), mimetype='text/plain', resumable=True)
+    drive_service.files().update(
+        fileId=file_id,
+        media_body=media_body
+    ).execute()'''
+
 # Lê um arquivo de texto no Google Drive e retornar todas linhas
 def read_file(drive_service, file_name):
 
@@ -135,3 +164,4 @@ def download_selected_file(drive_service, files):
             except Exception as e:
                 print(f"Error ao baixar arquivo: {e}")
                 return False
+
